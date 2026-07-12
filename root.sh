@@ -28,16 +28,24 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   read -p "Do you want to install Ubuntu? (YES/no): " install_ubuntu
 fi
 
-case $install_ubuntu in
-  [yY][eE][sS])
-    curl -L --retry "$max_retries" --connect-timeout "$timeout" \
-     -o /tmp/rootfs.tar.gz \
-     "http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.4-base-${ARCH_ALT}.tar.gz"
-    tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
-    ;;
-  *)
-    echo "Skipping Ubuntu installation."
-    ;;
+case "${install_ubuntu:-yes}" in
+    [yY]|[yY][eE][sS]|"")
+        if ! curl -fL --retry "$max_retries" --connect-timeout "$timeout" \
+            -o /tmp/rootfs.tar.gz \
+            "http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.4-base-${ARCH_ALT}.tar.gz"
+        then
+            echo "Failed to download rootfs."
+            exit 1
+        fi
+
+        if ! tar -xzf /tmp/rootfs.tar.gz -C "$ROOTFS_DIR"; then
+            echo "Failed to extract rootfs."
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Skipping Ubuntu installation."
+        ;;
 esac
 
 if [ ! -e $ROOTFS_DIR/.installed ]; then
